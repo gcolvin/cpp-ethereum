@@ -102,3 +102,5 @@ endif()
 
 # TODO - split out json_spirit, libscrypt and sec256k1
 add_subdirectory(utils)
+
+add_subdirectory(modexptest)
