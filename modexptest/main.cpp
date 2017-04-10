@@ -10,6 +10,10 @@ using namespace std;
 using namespace dev;
 using namespace eth;
 
+static const int Iterations = 100;
+static const int MinExp = 256;
+static const int MaxExp = 4096;
+
 namespace
 {
 	bigint modexp_boost(bigint const& _b, bigint const& _e, bigint const& _m)
@@ -116,20 +120,22 @@ namespace
 
 	bigint rand_bigint(size_t sizeBits)
 	{
-		using generator_type = boost::random::independent_bits_engine<std::mt19937, 1024, bigint>;
+		using generator_type = boost::random::independent_bits_engine<std::mt19937, MaxExp, bigint>;
 		static generator_type gen;
 
-		return gen() >> (1024 - sizeBits);
+		return gen() >> (MaxExp - sizeBits);
 	}
 
 	void measureWithGrowingExp(size_t _baseLength, size_t _modLength)
 	{
 		Timer timer;
 
-		for (int expLength = 256; expLength <= 1024; expLength += 8)
+		bigint totalGas = 0;
+		bigint totalTime = 0;
+		for (int expLength = MinExp; expLength <= MaxExp; expLength += 8)
 		{
 			double execTime = 0;
-			for (int i = 0; i < 100; ++i)
+			for (int i = 0; i < Iterations; ++i)
 			{
 				bigint _b = rand_bigint(_baseLength);
 				bigint _m = rand_bigint(_modLength);
@@ -140,7 +146,12 @@ namespace
 				execTime += timer.elapsed();
 			}
 			cout << _baseLength / 8 << "," << _modLength / 8 << "," << expLength / 8 << ',' << cost(_baseLength / 8, expLength / 8, _modLength / 8) << ',' << execTime << "\n";
+			
+			totalTime += bigint(execTime * 1000);
+			totalGas += cost(_baseLength / 8, expLength / 8, _modLength / 8);
 		}
+
+//		cout << "gas per 1 ms of modexp = " << totalGas * Iterations / totalTime << "\n";
 	}
 
 	void measurePerformanceAgainsCost()
