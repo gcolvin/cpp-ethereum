@@ -579,8 +579,9 @@ void VM::interpretCases()
 			ON_OP();
 			updateIOGas();
 
-			/// TODO: confirm shift >= 256 results in 0
-			m_SPP[0] = m_SP[0] << m_SP[1];
+			/// This workarounds a bug in Boost, ...
+			u256 mask = (u256(1) << (256 - m_SP[1])) - 1;
+			m_SPP[0] = (m_SP[0] & mask) << m_SP[1];
 		}
 		NEXT
 
