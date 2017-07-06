@@ -40,6 +40,7 @@
 #include "Block.h"
 #include "CommonNet.h"
 #include "ClientBase.h"
+#include "WarpHostCapability.h"
 
 namespace dev
 {
@@ -81,6 +82,7 @@ public:
 		p2p::Host* _host,
 		std::shared_ptr<GasPricer> _gpForAdoption,
 		std::string const& _dbPath = std::string(),
+		std::string const& _snapshotPath = std::string(),
 		WithExisting _forceAction = WithExisting::Trust,
 		TransactionQueue::Limits const& _l = TransactionQueue::Limits{1024, 1024}
 	);
@@ -195,7 +197,7 @@ public:
 protected:
 	/// Perform critical setup functions.
 	/// Must be called in the constructor of the finally derived class.
-	void init(p2p::Host* _extNet, std::string const& _dbPath, WithExisting _forceAction, u256 _networkId);
+	void init(p2p::Host* _extNet, std::string const& _dbPath, std::string const& _snapshotPath, WithExisting _forceAction, u256 _networkId);
 
 	/// InterfaceStub methods
 	BlockChain& bc() override { return m_bc; }
@@ -299,6 +301,7 @@ protected:
 	std::chrono::system_clock::time_point m_lastGetWork;	///< Is there an active and valid remote worker?
 
 	std::weak_ptr<EthereumHost> m_host;		///< Our Ethereum Host. Don't do anything if we can't lock.
+	std::weak_ptr<WarpHostCapability> m_warpHost;
 
 	Handler<> m_tqReady;
 	Handler<h256 const&> m_tqReplaced;

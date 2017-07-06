@@ -43,6 +43,7 @@ public:
 		p2p::Host* _host,
 		std::shared_ptr<GasPricer> _gpForAdoption,
 		std::string const& _dbPath = std::string(),
+		std::string const& _snapshotPath = std::string(),
 		WithExisting _forceAction = WithExisting::Trust,
 		TransactionQueue::Limits const& _l = TransactionQueue::Limits{1024, 1024}
 	);

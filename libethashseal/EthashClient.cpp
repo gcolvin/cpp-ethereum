@@ -48,10 +48,11 @@ EthashClient::EthashClient(
 	p2p::Host* _host,
 	std::shared_ptr<GasPricer> _gpForAdoption,
 	std::string const& _dbPath,
+	std::string const& _snapshotPath,
 	WithExisting _forceAction,
 	TransactionQueue::Limits const& _limits
 ):
-	Client(_params, _networkID, _host, _gpForAdoption, _dbPath, _forceAction, _limits)
+	Client(_params, _networkID, _host, _gpForAdoption, _dbPath, _snapshotPath, _forceAction, _limits)
 {
 	// will throw if we're not an Ethash seal engine.
 	asEthashClient(*this);

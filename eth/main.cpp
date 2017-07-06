@@ -160,6 +160,7 @@ void help()
 		<< "    --to <n>  Export only to block n (inclusive); n may be a decimal, a '0x' prefixed hash, or 'latest'." << endl
 		<< "    --only <n>  Equivalent to --export-from n --export-to n." << endl
 		<< "    --dont-check  Prevent checking some block aspects. Faster importing, but to apply only when the data is known to be valid." << endl
+		<< "    --download-snapshot <path> Download snapshot data to specified path." << endl
 		<< endl
 		<< "General Options:" << endl
 		<< "    -d,--db-path,--datadir <path>  Load database from path (default: " << getDataDir() << ")." << endl
@@ -419,6 +420,7 @@ int main(int argc, char** argv)
 	bool listenSet = false;
 	string configJSON;
 	string genesisJSON;
+	string snapshotPath;
 	for (int i = 1; i < argc; ++i)
 	{
 		string arg = argv[i];
@@ -872,6 +874,8 @@ int main(int argc, char** argv)
 			noPinning = true;
 			bootstrap = false;
 		}
+		else if (arg == "--download-snapshot" && i + 1 < argc)
+			snapshotPath = argv[++i];
 		else
 		{
 			cerr << "Invalid argument: " << arg << endl;
@@ -1017,6 +1021,7 @@ int main(int argc, char** argv)
 	dev::WebThreeDirect web3(
 		WebThreeDirect::composeClientVersion("eth"),
 		getDataDir(),
+		snapshotPath,
 		chainParams,
 		withExisting,
 		nodeMode == NodeMode::Full ? caps : set<string>(),
@@ -1181,7 +1186,7 @@ int main(int argc, char** argv)
 	if (author)
 		cout << "Mining Beneficiary: " << renderFullAddress(author) << endl;
 
-	if (bootstrap || !remoteHost.empty() || enableDiscovery || listenSet)
+	if (bootstrap || !remoteHost.empty() || enableDiscovery || listenSet || !preferredNodes.empty())
 	{
 		web3.startNetwork();
 		cout << "Node ID: " << web3.enode() << endl;
