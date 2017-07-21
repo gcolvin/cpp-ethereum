@@ -125,7 +125,7 @@ TransactionNotification SimpleAccountHolder::authenticate(dev::eth::TransactionS
 	TransactionRepercussion accessResult = access(_t.from);
 	if (accessResult != TransactionRepercussion::Success && m_getAuthorisation)
 	{
-		if (m_getAuthorisation(_t, isProxyAccount(_t.from)))
+		if (m_testingMode || m_getAuthorisation(_t, isProxyAccount(_t.from)))
 			accessResult = TransactionRepercussion::Success;
 		else
 			accessResult = TransactionRepercussion::Refused;
@@ -161,6 +161,13 @@ SignNotification SimpleAccountHolder::signHash(Address const& _account, h256 con
 	TransactionRepercussion accessResult = access(_account);
 	if (accessResult != TransactionRepercussion::Success)
 	{
+		if (m_testingMode)
+			accessResult = TransactionRepercussion::Success;
+		else
+			accessResult = TransactionRepercussion::Refused;
+	}
+	if (accessResult != TransactionRepercussion::Success)
+	{
 		ret.r = accessResult;
 		return ret;
 	}
@@ -170,6 +177,9 @@ SignNotification SimpleAccountHolder::signHash(Address const& _account, h256 con
 		{
 			ret.r = TransactionRepercussion::Success;
 			ret.sig = sign(s, _data);
+			uint8_t& v = ret.sig[64];
+			assert(v == 0 || v == 1);
+			v = 27 + v;
 		}
 		else
 			ret.r = TransactionRepercussion::Locked;

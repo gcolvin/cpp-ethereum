@@ -119,7 +119,7 @@ string Test::test_rawSign(std::string const& _accountId, std::string const& _dat
 		switch (n.r)
 		{
 		case TransactionRepercussion::Success:
-			return toJS(n.sig); // ??? Is this the right way?
+			return toJS(n.sig);
 		case TransactionRepercussion::ProxySuccess:
 			return toJS(n.sig);
 		case TransactionRepercussion::UnknownAccount:

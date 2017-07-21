@@ -1139,7 +1139,7 @@ int main(int argc, char** argv)
 		>;
 
 		sessionManager.reset(new rpc::SessionManager());
-		accountHolder.reset(new SimpleAccountHolder([&](){ return web3.ethereum(); }, getAccountPassword, keyManager, authenticator));
+		accountHolder.reset(new SimpleAccountHolder([&](){ return web3.ethereum(); }, getAccountPassword, keyManager, authenticator, testingMode));
 		auto ethFace = new rpc::Eth(*web3.ethereum(), *accountHolder.get());
 		rpc::TestFace* testEth = nullptr;
 		if (testingMode)
