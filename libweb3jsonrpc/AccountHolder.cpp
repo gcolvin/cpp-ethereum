@@ -155,6 +155,30 @@ TransactionNotification SimpleAccountHolder::authenticate(dev::eth::TransactionS
 	return ret;
 }
 
+SignNotification SimpleAccountHolder::signHash(Address const& _account, h256 const& _data)
+{
+	SignNotification ret;
+	TransactionRepercussion accessResult = access(_account);
+	if (accessResult != TransactionRepercussion::Success)
+	{
+		ret.r = accessResult;
+		return ret;
+	}
+	if (isRealAccount(_account))
+	{
+		if (Secret s = m_keyManager.secret(_account, [&](){ return m_getPassword(_account); }))
+		{
+			ret.r = TransactionRepercussion::Success;
+			ret.sig = sign(s, _data);
+		}
+		else
+			ret.r = TransactionRepercussion::Locked;
+	}
+	else
+		ret.r = TransactionRepercussion::UnknownAccount;
+	return ret;
+}
+
 bool SimpleAccountHolder::unlockAccount(Address const& _account, string const& _password, unsigned _duration)
 {
 	if (!m_keyManager.hasAccount(_account))
@@ -203,5 +227,20 @@ TransactionNotification FixedAccountHolder::authenticate(dev::eth::TransactionSk
 	return ret;
 }
 
-
-
+SignNotification FixedAccountHolder::signHash(Address const& _account, h256 const& _data)
+{
+	SignNotification ret;
+	if (isRealAccount(_account))
+	{
+		if (m_accounts.count(_account))
+		{
+			ret.r = TransactionRepercussion::Success;
+			ret.sig = sign(m_accounts[_account], _data);
+		}
+		else
+			ret.r = TransactionRepercussion::Locked;
+	}
+	else
+		ret.r = TransactionRepercussion::UnknownAccount;
+	return ret;
+}

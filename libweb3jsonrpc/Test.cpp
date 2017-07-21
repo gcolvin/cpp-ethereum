@@ -21,17 +21,19 @@
  */
 
 #include "Test.h"
+#include "AccountHolder.h"
 #include <jsonrpccpp/common/errors.h>
 #include <jsonrpccpp/common/exception.h>
 #include <libethereum/ClientTest.h>
 #include <libethereum/ChainParams.h>
+#include <libethcore/CommonJS.h>
 
 using namespace std;
 using namespace dev;
 using namespace dev::rpc;
 using namespace jsonrpc;
 
-Test::Test(eth::Client& _eth): m_eth(_eth) {}
+Test::Test(eth::Client& _eth, eth::AccountHolder& _ethAccounts): m_eth(_eth), m_ethAccounts(_ethAccounts) {}
 
 bool Test::test_setChainParams(Json::Value const& param1)
 {
@@ -101,4 +103,42 @@ bool Test::test_rewindToBlock(int _number)
 		BOOST_THROW_EXCEPTION(JsonRpcException(Errors::ERROR_RPC_INTERNAL_ERROR));
 	}
 	return true;
+}
+
+string Test::test_rawSign(std::string const& _accountId, std::string const& _data)
+{
+	try
+	{
+		bytes const parsed = fromHex(_data, WhenError::Throw);
+		if (parsed.size() != 32)
+			BOOST_THROW_EXCEPTION(JsonRpcException("Data is not 32 bytes."));
+		h256 const data{parsed};
+		Address const signer = jsToAddress(_accountId);
+		using namespace dev::eth;
+		SignNotification n = m_ethAccounts.signHash(signer, data);
+		switch (n.r)
+		{
+		case TransactionRepercussion::Success:
+			return toJS(n.sig); // ??? Is this the right way?
+		case TransactionRepercussion::ProxySuccess:
+			return toJS(n.sig);
+		case TransactionRepercussion::UnknownAccount:
+			BOOST_THROW_EXCEPTION(JsonRpcException("Account unknown."));
+		case TransactionRepercussion::Locked:
+			BOOST_THROW_EXCEPTION(JsonRpcException("Account is locked."));
+		case TransactionRepercussion::Refused:
+			BOOST_THROW_EXCEPTION(JsonRpcException("Transaction rejected by user."));
+		case TransactionRepercussion::Unknown:
+		default:
+			BOOST_THROW_EXCEPTION(JsonRpcException("Unknown reason."));
+		}
+	}
+	catch (JsonRpcException const&)
+	{
+		throw;
+	}
+	catch (...)
+	{
+		BOOST_THROW_EXCEPTION(JsonRpcException(Errors::ERROR_RPC_INVALID_PARAMS));
+	}
 }

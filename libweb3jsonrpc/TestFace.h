@@ -19,6 +19,7 @@ namespace dev {
                     this->bindAndAddMethod(jsonrpc::Procedure("test_modifyTimestamp", jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_BOOLEAN, "param1",jsonrpc::JSON_INTEGER, NULL), &dev::rpc::TestFace::test_modifyTimestampI);
                     this->bindAndAddMethod(jsonrpc::Procedure("test_addBlock", jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_BOOLEAN, "param1",jsonrpc::JSON_STRING, NULL), &dev::rpc::TestFace::test_addBlockI);
                     this->bindAndAddMethod(jsonrpc::Procedure("test_rewindToBlock", jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_BOOLEAN, "param1",jsonrpc::JSON_INTEGER, NULL), &dev::rpc::TestFace::test_rewindToBlockI);
+                    this->bindAndAddMethod(jsonrpc::Procedure("test_rawSign", jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_STRING, "param1",jsonrpc::JSON_STRING, "param2",jsonrpc::JSON_STRING, NULL), &dev::rpc::TestFace::test_rawSignI);
                 }
 
                 inline virtual void test_setChainParamsI(const Json::Value &request, Json::Value &response)
@@ -41,11 +42,19 @@ namespace dev {
                 {
                     response = this->test_rewindToBlock(request[0u].asInt());
                 }
+                /// Signs a piece of 32 byte data with the specified account's secret key.
+                /// The return data format is the same as eth_sign.
+                /// Unlike eth_sign, test_rawSign does not perform hashing or prepending any test.
+                inline virtual void test_rawSignI(const Json::Value &request, Json::Value &response)
+                {
+                    response = this->test_rawSign(request[0u].asString(), request[1u].asString());
+                }
                 virtual bool test_setChainParams(const Json::Value& param1) = 0;
                 virtual bool test_mineBlocks(int param1) = 0;
                 virtual bool test_modifyTimestamp(int param1) = 0;
                 virtual bool test_addBlock(const std::string& param1) = 0;
                 virtual bool test_rewindToBlock(int param1) = 0;
+                virtual std::string test_rawSign(const std::string& param1, const std::string& param2) = 0;
         };
 
     }

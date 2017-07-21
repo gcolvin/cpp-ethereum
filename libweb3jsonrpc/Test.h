@@ -22,6 +22,7 @@
 
 #pragma once
 #include "TestFace.h"
+#include "AccountHolder.h"
 
 namespace dev
 {
@@ -37,7 +38,7 @@ namespace rpc
 class Test: public TestFace
 {
 public:
-	Test(eth::Client& _eth);
+	Test(eth::Client& _eth, eth::AccountHolder& _ethAccounts);
 	virtual RPCModules implementedModules() const override
 	{
 		return RPCModules{RPCModule{"test", "1.0"}};
@@ -48,9 +49,11 @@ public:
 	virtual bool test_modifyTimestamp(int _timestamp) override;
 	virtual bool test_addBlock(std::string const& _rlp) override;
 	virtual bool test_rewindToBlock(int _number) override;
+	virtual std::string test_rawSign(std::string const& _accountId, std::string const& _data) override;
 
 private:
 	eth::Client& m_eth;
+	eth::AccountHolder& m_ethAccounts;
 };
 
 }

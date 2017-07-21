@@ -57,6 +57,12 @@ struct TransactionNotification
 	Address created;
 };
 
+struct SignNotification
+{
+	TransactionRepercussion r;
+	Signature sig;
+};
+
 /**
  * Manages real accounts (where we know the secret key) and proxy accounts (where transactions
  * to be sent from these accounts are forwarded to a proxy on the other side).
@@ -70,6 +76,8 @@ public:
 	// use m_web3's submitTransaction
 	// or use AccountHolder::queueTransaction(_t) to accept
 	virtual TransactionNotification authenticate(dev::eth::TransactionSkeleton const& _t) = 0;
+	// Signs a 32 byte piece of data using the signer's secret key.
+	virtual SignNotification signHash(Address const& _signer, h256 const& _data) = 0;
 
 	Addresses allAccounts() const;
 	bool isRealAccount(Address const& _account) const { return realAccounts().count(_account) > 0; }
@@ -117,6 +125,7 @@ public:
 
 	AddressHash realAccounts() const override;
 	TransactionNotification authenticate(dev::eth::TransactionSkeleton const& _t) override;
+	SignNotification signHash(Address const& _signer, h256 const& _data) override;
 
 	virtual bool unlockAccount(Address const& _account, std::string const& _password, unsigned _duration) override;
 
@@ -155,6 +164,8 @@ public:
 	// use m_web3's submitTransaction
 	// or use AccountHolder::queueTransaction(_t) to accept
 	TransactionNotification authenticate(dev::eth::TransactionSkeleton const& _t) override;
+
+	SignNotification signHash(Address const& _signer, h256 const& _data) override;
 
 private:
 	std::unordered_map<dev::Address, dev::Secret> m_accounts;
