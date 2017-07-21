@@ -105,28 +105,36 @@ AddressHash SimpleAccountHolder::realAccounts() const
 	return m_keyManager.accountsHash();
 }
 
+TransactionRepercussion SimpleAccountHolder::access(Address const& _account)
+{
+	if (m_unlockedAccounts.count(_account))
+	{
+		chrono::steady_clock::time_point start = m_unlockedAccounts[_account].first;
+		chrono::seconds duration(m_unlockedAccounts[_account].second);
+		auto end = start + duration;
+		if (start < end && chrono::steady_clock::now() < end)
+			return TransactionRepercussion::Success;
+		return TransactionRepercussion::Locked;
+	}
+	return TransactionRepercussion::Locked;
+}
+
 TransactionNotification SimpleAccountHolder::authenticate(dev::eth::TransactionSkeleton const& _t)
 {
 	TransactionNotification ret;
-	bool locked = true;
-	if (m_unlockedAccounts.count(_t.from))
-	{
-		chrono::steady_clock::time_point start = m_unlockedAccounts[_t.from].first;
-		chrono::seconds duration(m_unlockedAccounts[_t.from].second);
-		auto end = start + duration;
-		if (start < end && chrono::steady_clock::now() < end)
-			locked = false;
-	}
-	ret.r = TransactionRepercussion::Locked;
-	if (locked && m_getAuthorisation)
+	TransactionRepercussion accessResult = access(_t.from);
+	if (accessResult != TransactionRepercussion::Success && m_getAuthorisation)
 	{
 		if (m_getAuthorisation(_t, isProxyAccount(_t.from)))
-			locked = false;
+			accessResult = TransactionRepercussion::Success;
 		else
-			ret.r = TransactionRepercussion::Refused;
+			accessResult = TransactionRepercussion::Refused;
 	}
-	if (locked)
+	if (accessResult != TransactionRepercussion::Success)
+	{
+		ret.r = accessResult;
 		return ret;
+	}
 	if (isRealAccount(_t.from))
 	{
 		if (Secret s = m_keyManager.secret(_t.from, [&](){ return m_getPassword(_t.from); }))

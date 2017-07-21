@@ -121,6 +121,8 @@ public:
 	virtual bool unlockAccount(Address const& _account, std::string const& _password, unsigned _duration) override;
 
 private:
+	/// A common routine before accessing the secret key of an account.
+	TransactionRepercussion access(Address const& _account);
 	std::function<std::string(Address)> m_getPassword;
 	std::function<bool(TransactionSkeleton const&, bool)> m_getAuthorisation;
 	KeyManager& m_keyManager;
