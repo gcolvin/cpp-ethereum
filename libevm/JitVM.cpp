@@ -174,7 +174,7 @@ void create(evm_result* o_result, ExtVMFace& _env, evm_message const* _msg) noex
 	}
 	else
 	{
-		o_result->code = EVM_REVERT;
+		o_result->code = EVM_FAILURE;
 
 		// Pass the output to the EVM without a copy. The EVM will delete it
 		// when finished with it.
@@ -221,11 +221,7 @@ void call(evm_result* o_result, evm_env* _opaqueEnv, evm_message const* _msg) no
 	bool success = false;
 	owning_bytes_ref output;
 	std::tie(success, output) = env.call(params);
-	// FIXME: We have a mess here. It is hard to distinguish reverts from failures.
-	// In first case we want to keep the output, in the second one the output
-	// is optional and should not be passed to the contract, but can be useful
-	// for EVM in general.
-	o_result->code = success ? EVM_SUCCESS : EVM_REVERT;
+	o_result->code = success ? EVM_SUCCESS : EVM_FAILURE;
 	o_result->gas_left = static_cast<int64_t>(params.gas);
 
 	// Pass the output to the EVM without a copy. The EVM will delete it
