@@ -34,6 +34,7 @@ using namespace json_spirit;
 using namespace dev;
 using namespace dev::eth;
 using namespace dev::test;
+namespace fs = boost::filesystem;
 
 FakeExtVM::FakeExtVM(EnvInfo const& _envInfo, unsigned _depth):			/// TODO: XXX: remove the default argument & fix.
 	ExtVMFace(_envInfo, Address(), Address(), Address(), 0, 1, bytesConstRef(), bytes(), EmptySHA3, false, _depth)
@@ -550,8 +551,8 @@ BOOST_AUTO_TEST_CASE(vmRandom)
 {
 	test::Options::get(); // parse command line options, e.g. to enable JIT
 
-	string testPath = getTestPath();
-	testPath += "/VMTests/RandomTests";
+	fs::path testPath = getTestPath();
+	testPath /= fs::path("VMTests/RandomTests");
 
 	std::vector<boost::filesystem::path> testFiles = test::getJsonFiles(testPath);
 
