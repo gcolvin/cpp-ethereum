@@ -38,7 +38,7 @@ namespace eth
 // EVM_TRACE              - provides various levels of tracing
 
 #ifndef EIP_615
-	#define EIP_615 false
+	#define EIP_615 true
 #endif
 
 #ifndef EIP_616
@@ -61,7 +61,7 @@ namespace eth
 #endif
 
 #ifndef EVM_OPTIMIZE
-	#define EVM_OPTIMIZE true
+	#define EVM_OPTIMIZE false
 #endif
 #if EVM_OPTIMIZE
 	#define EVM_REPLACE_CONST_JUMP true
@@ -75,10 +75,10 @@ namespace eth
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// set EVM_TRACE to 3, 2, 1, or 0 for lots to no tracing to cerr
+// set EVM_TRACE to 0 or more for none or more tracing to cerr
 //
 #ifndef EVM_TRACE
-	#define EVM_TRACE 0
+	#define EVM_TRACE 3
 #endif
 #if EVM_TRACE > 0
 
@@ -96,10 +96,10 @@ namespace eth
 			
 	#define TRACE_VAL(level, name, val) \
 		if ((level) <= EVM_TRACE) \
-			cerr <<"=== "<< (name) <<" "<<hex<< (val) <<endl;
+			cerr << hex <<"=== "<< (name) <<" "<< (val) <<endl;
 	#define TRACE_OP(level, pc, op) \
 		if ((level) <= EVM_TRACE) \
-			cerr <<"*** "<< (pc) <<" "<< instructionInfo(op).name <<endl;
+			cerr << hex <<"*** " << (pc) <<" "<< int(op) << " = "<< instructionInfo(op).name <<" "<<endl;
 			
 	#define TRACE_PRE_OPT(level, pc, op) \
 		if ((level) <= EVM_TRACE) \
@@ -416,7 +416,6 @@ namespace eth
 			&&SUICIDE,  \
 		};  \
 		if (!m_caseInit) {            \
-			c_jumpTable = jumpTable;  \
 			m_PC = 0;                 \
 			m_caseInit = true;        \
 			return;                   \

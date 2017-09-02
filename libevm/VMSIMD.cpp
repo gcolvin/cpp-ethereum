@@ -14,10 +14,10 @@
 	You should have received a copy of the GNU General Public License
 	along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <libethereum/ExtVM.h>
-#include "VMConfig.h"
-#include "VM.h"
 #if EIP_616
+
+#include <libethereum/ExtVM.h>
+#include "VM.h"
 
 namespace dev
 {

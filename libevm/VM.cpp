@@ -18,7 +18,6 @@
  */
 
 #include <libethereum/ExtVM.h>
-#include "VMConfig.h"
 #include "VM.h"
 using namespace std;
 using namespace dev;
@@ -54,30 +53,29 @@ template <class S> S modWorkaround(S const& _a, S const& _b)
 // for decoding destinations of JUMPTO, JUMPV, JUMPSUB and JUMPSUBV
 //
 
-uint64_t VM::decodeJumpDest(const byte* const _code, uint64_t& _pc)
+uint64_t VM::decodeJumpDest()
 {
 	// turn 2 MSB-first bytes in the code into a native-order integer
-	uint64_t dest      = _code[_pc++];
-	dest = (dest << 8) | _code[_pc++];
+	uint64_t dest      = m_code[m_PC++];
+	dest = (dest << 8) | m_code[m_PC++];
+	dest = (dest << 8) | m_code[m_PC++];
+	dest = (dest << 8) | m_code[m_PC++];
 	return dest;
 }
 
-uint64_t VM::decodeJumpvDest(const byte* const _code, uint64_t& _pc, byte _voff)
+uint64_t VM::decodeJumpvDest(byte _voff)
 {
 	// Layout of jump table in bytecode...
 	//     byte opcode
 	//     byte n_jumps
 	//     byte table[n_jumps][2]
-	//	
-	uint64_t pc = _pc;
-	byte n = _code[++pc];           // byte after opcode is number of jumps
-	if (_voff >= n) _voff = n - 1;  // if offset overflows use default jump
-	pc += _voff * 2;                // adjust inout pc before index destination in table
-	
-	uint64_t dest = decodeJumpDest(_code, pc);
-	
-	_pc += 1 + n * 2;               // adust inout _pc to opcode after table 
-	return dest;
+	//
+	byte n = m_code[++m_PC];          // byte after opcode is number of jumps
+	uint64_t pc = m_PC;
+	if (_voff >= n) _voff = n - 1;    // if offset overflows use default jump
+	pc += _voff * 4;
+	uint64_t dest = decodeJumpDest();
+	m_PC += n * 4;
 }
 
 
@@ -169,9 +167,10 @@ void VM::logGasMem()
 void VM::fetchInstruction()
 {
 	m_OP = Instruction(m_code[m_PC]);
+    TRACE_OP(3, m_PC, m_OP);
 	const InstructionMetric& metric = c_metrics[static_cast<size_t>(m_OP)];
 	adjustStack(metric.args, metric.ret);
-
+    
 	// FEES...
 	m_runGas = toInt63(m_schedule->tierStepGas[static_cast<unsigned>(metric.gasPriceTier)]);
 	m_newMemSize = m_mem.size();
@@ -191,6 +190,8 @@ void VM::fetchInstruction()
 
 owning_bytes_ref VM::exec(u256& _io_gas, ExtVMFace& _ext, OnOpFunc const& _onOp)
 {
+	TRACE_STR(1, "VM::exec")
+	TRACE_VAL(1, "EVM_TRACE=", EVM_TRACE)
 	m_io_gas_p = &_io_gas;
 	m_io_gas = uint64_t(_io_gas);
 	m_ext = &_ext;
@@ -222,6 +223,7 @@ owning_bytes_ref VM::exec(u256& _io_gas, ExtVMFace& _ext, OnOpFunc const& _onOp)
 //
 void VM::interpretCases()
 {
+	TRACE_STR(2, "VM::interpretCases")
 	INIT_CASES
 	DO_CASES
 	{	
@@ -658,12 +660,13 @@ void VM::interpretCases()
 		NEXT		
 
 #if EIP_615
+
 		CASE(JUMPTO)
 		{
 			ON_OP();
 			updateIOGas();
 			
-			m_PC = decodeJumpDest(m_code.data(), m_PC);
+			m_PC = decodeJumpDest();
 		}
 		CONTINUE
 
@@ -673,7 +676,7 @@ void VM::interpretCases()
 			updateIOGas();
 			
 			if (m_SP[0])
-				m_PC = decodeJumpDest(m_code.data(), m_PC);
+				m_PC = decodeJumpDest();
 			else
 				++m_PC;
 		}
@@ -683,7 +686,8 @@ void VM::interpretCases()
 		{
 			ON_OP();
 			updateIOGas();
-			m_PC = decodeJumpvDest(m_code.data(), m_PC, byte(m_SP[0]));
+
+			m_PC = decodeJumpvDest(byte(m_SP[0]));
 		}
 		CONTINUE
 
@@ -691,8 +695,9 @@ void VM::interpretCases()
 		{
 			ON_OP();
 			updateIOGas();
+
 			*m_RP++ = m_PC++;
-			m_PC = decodeJumpDest(m_code.data(), m_PC);
+			m_PC = decodeJumpDest();
 		}
 		CONTINUE
 
@@ -700,8 +705,9 @@ void VM::interpretCases()
 		{
 			ON_OP();
 			updateIOGas();
+
 			*m_RP++ = m_PC;
-			m_PC = decodeJumpvDest(m_code.data(), m_PC, byte(m_SP[0]));
+			m_PC = decodeJumpvDest(byte(m_SP[0]));
 		}
 		CONTINUE
 
@@ -709,25 +715,22 @@ void VM::interpretCases()
 		{
 			ON_OP();
 			updateIOGas();
-			
+
 			m_PC = *m_RP--;
 		}
 		NEXT
 
 		CASE(BEGINSUB)
 		{
-			ON_OP();
-			updateIOGas();
+			throwBadInstruction();
 		}
-		NEXT
-		
+		CONTINUE		
 
 		CASE(BEGINDATA)
 		{
-			ON_OP();
-			updateIOGas();
+			throwBadInstruction();
 		}
-		NEXT
+		CONTINUE
 
 		CASE(GETLOCAL)
 		{

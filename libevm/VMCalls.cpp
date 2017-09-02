@@ -17,7 +17,6 @@
 
 
 #include <libethereum/ExtVM.h>
-#include "VMConfig.h"
 #include "VM.h"
 using namespace std;
 using namespace dev;
@@ -132,6 +131,7 @@ int64_t VM::verifyJumpDest(u256 const& _dest, bool _throw)
 
 void VM::caseCreate()
 {
+	TRACE_STR(1, "VM::caseCreate")
 	ON_OP();
 	m_bounce = &VM::interpretCases;
 	m_runGas = toInt63(m_schedule->createGas);
@@ -180,6 +180,7 @@ void VM::caseCreate()
 
 void VM::caseCall()
 {
+	TRACE_STR(1, "VM::caseCall")
 	m_bounce = &VM::interpretCases;
 
 	// TODO: Please check if that does not actually increases the stack size.
@@ -215,6 +216,8 @@ void VM::caseCall()
 
 bool VM::caseCallSetup(CallParameters *callParams, bytesRef& o_output)
 {
+	TRACE_STR(1, "VM::caseCallSetup")
+
 	// Make sure the params were properly initialized.
 	assert(callParams->valueTransfer == 0);
 	assert(callParams->apparentValue == 0);

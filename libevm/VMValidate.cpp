@@ -19,16 +19,14 @@
 
 #if EIP_615
 
+using namespace std;
+using namespace dev;
+using namespace dev::eth;
 #include <libethereum/ExtVM.h>
 
 // validator is not a full interpreter, canot support optimized dispatch
 #define EVM_JUMP_DISPATCH false
-#include "VMConfig.h"
-
 #include "VM.h"
-using namespace std;
-using namespace dev;
-using namespace dev::eth;
 
 ///////////////////////////////////////////////////////////////////////////////
 //

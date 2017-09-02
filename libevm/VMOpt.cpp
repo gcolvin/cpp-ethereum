@@ -17,7 +17,6 @@
 
 
 #include <libethereum/ExtVM.h>
-#include "VMConfig.h"
 #include "VM.h"
 using namespace std;
 using namespace dev;
@@ -96,6 +95,7 @@ void VM::optimize()
 		)
 		{
 			pc += (byte)op - (byte)Instruction::PUSH1 + 1;
+	        TRACE_VAL(3, "push* pc=", pc)
 		}
 #if EIP_615
 		else if (
@@ -103,22 +103,26 @@ void VM::optimize()
 			op == Instruction::JUMPIF ||
 			op == Instruction::JUMPSUB)
 		{
-			++pc;
 			pc += 4;
+	        TRACE_VAL(3, "jump* pc=", pc)
 		}
 		else if (op == Instruction::JUMPV || op == Instruction::JUMPSUBV)
 		{
-			++pc;
-			pc += 4 * m_code[pc];  // number of 4-byte dests followed by table
+			pc += 2 * m_code[pc];  // number of 2-byte dests followed by table
+			pc += 2;
+	        TRACE_VAL(3, "jump*v pc=", pc)
 		}
 		else if (op == Instruction::BEGINSUB)
 		{
 			m_beginSubs.push_back(pc);
+			pc += 4;
+	        TRACE_VAL(3, "beginsub pc=", pc)
 		}
 		else if (op == Instruction::BEGINDATA)
 		{
 			break;
 		}
+		
 #endif
 	}
 	
@@ -204,6 +208,7 @@ void VM::optimize()
 //
 void VM::initEntry()
 {
+	TRACE_STR(1, "VM::initEntry")
 	m_bounce = &VM::interpretCases; 	
 	interpretCases(); // first call initializes jump table
 	initMetrics();

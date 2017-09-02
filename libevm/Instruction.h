@@ -169,16 +169,16 @@ enum class Instruction: uint8_t
 	JUMPC,              ///< alter the program counter - pre-verified
 	JUMPCI,             ///< conditionally alter the program counter - pre-verified
 
-	JUMPTO = 0xb0,      ///< alter the program counter to a jumpdest
-	JUMPIF,             ///< conditionally alter the program counter
-	JUMPSUB,            ///< alter the program counter to a beginsub
-	JUMPV,              ///< alter the program counter to a jumpdest
-	JUMPSUBV,           ///< alter the program counter to a beginsub
-	BEGINSUB,           ///< set a potential jumpsub destination
-	BEGINDATA,          ///< begine the data section
-	RETURNSUB,          ///< return to subroutine jumped from
-	PUTLOCAL,           ///< pop top of stack to local variable
-	GETLOCAL,           ///< push local variable to top of stack
+	JUMPTO = 0xb0,      ///< alter the program counter to a jumpdest -- not part of Instructions.cpp
+	JUMPIF,             ///< conditionally alter the program counter -- not part of Instructions.cpp
+	JUMPV,              ///< alter the program counter to a jumpdest -- not part of Instructions.cpp
+	JUMPSUB,            ///< alter the program counter to a beginsub -- not part of Instructions.cpp
+	JUMPSUBV,           ///< alter the program counter to a beginsub -- not part of Instructions.cpp
+	BEGINSUB,           ///< set a potential jumpsub destination -- not part of Instructions.cpp
+	BEGINDATA,          ///< begin the data section -- not part of Instructions.cpp
+	RETURNSUB,          ///< return to subroutine jumped from -- not part of Instructions.cpp
+	PUTLOCAL,           ///< pop top of stack to local variable -- not part of Instructions.cpp
+	GETLOCAL,           ///< push local variable to top of stack -- not part of Instructions.cpp
 
 	XADD = 0xc1,        ///< addition operation
 	XMUL,               ///< mulitplication operation

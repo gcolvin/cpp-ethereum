@@ -24,6 +24,7 @@
 #include <libethcore/Common.h>
 #include <libdevcore/SHA3.h>
 #include <libethcore/BlockHeader.h>
+#include "VMConfig.h"
 #include "VMFace.h"
 #include "Instruction.h"
 
@@ -83,7 +84,6 @@ private:
 	static void initMetrics();
 	static u256 exp256(u256 _base, u256 _exponent);
 	void copyCode(int);
-	const void* const* c_jumpTable = 0;
 	bool m_caseInit = false;
 	typedef void (VM::*MemFnPtr)();
 	MemFnPtr m_bounce = 0;
@@ -104,20 +104,17 @@ private:
 	bytes m_returnData;
 
 	// space for data stack, grows towards smaller addresses from the end
-	u256 m_stack[1024];
+	u256 m_stack[1024] = { 0 };
 	u256 *m_stackEnd = &m_stack[1024];
 	size_t stackSize() { return m_stackEnd - m_SP; }
 	
 #if EIP_615
 	// space for return stack
-	uint64_t m_return[1024];
+	uint64_t m_return[1024] = { 0 };
 	
 	// mark PCs with frame size to detect cycles and stack mismatch
 	std::vector<size_t> m_frameSize;
 #endif
-
-	// constant pool
-	std::vector<u256> m_pool;
 
 	// interpreter state
 	Instruction m_OP;                   // current operation
@@ -133,9 +130,21 @@ private:
 	uint64_t m_newMemSize = 0;
 	uint64_t m_copyMemSize = 0;
 
+	// constant pool
+	std::vector<u256> m_pool;
+
+	// destinations
+#if EIP_615
+	std::vector<uint64_t> m_beginSubs;
+#endif
+	std::vector<uint64_t> m_jumpDests;
+
 	// initialize interpreter
 	void initEntry();
 	void optimize();
+	void reportStackUse();
+	int poolConstant(const u256&);
+	int64_t verifyJumpDest(u256 const& _dest, bool _throw = true);
 
 	// interpreter loop & switch
 	void interpretCases();
@@ -148,22 +157,6 @@ private:
 	void copyDataToMemory(bytesConstRef _data, u256*_sp);
 	uint64_t memNeed(u256 _offset, u256 _size);
 
-	void throwOutOfGas();
-	void throwBadInstruction();
-	void throwBadJumpDestination();
-	void throwBadStack(unsigned _removed, unsigned _added);
-	void throwRevertInstruction(owning_bytes_ref&& _output);
-	void throwDisallowedStateChange();
-	void throwBufferOverrun(bigint const& _enfOfAccess);
-
-	void reportStackUse();
-
-	std::vector<uint64_t> m_beginSubs;
-	std::vector<uint64_t> m_jumpDests;
-	int64_t verifyJumpDest(u256 const& _dest, bool _throw = true);
-
-	int poolConstant(const u256&);
-
 	void onOperation();
 	void adjustStack(unsigned _removed, unsigned _added);
 	uint64_t gasForMem(u512 _size);
@@ -174,8 +167,16 @@ private:
 	void logGasMem();
 	void fetchInstruction();
 	
-	uint64_t decodeJumpDest(const byte* const _code, uint64_t& _pc);
-	uint64_t decodeJumpvDest(const byte* const _code, uint64_t& _pc, byte _voff);
+	uint64_t decodeJumpDest();
+	uint64_t decodeJumpvDest(byte _voff);
+
+	void throwOutOfGas();
+	void throwBadInstruction();
+	void throwBadJumpDestination();
+	void throwBadStack(unsigned _removed, unsigned _added);
+	void throwRevertInstruction(owning_bytes_ref&& _output);
+	void throwDisallowedStateChange();
+	void throwBufferOverrun(bigint const& _enfOfAccess);
 
 	template<class T> uint64_t toInt63(T v)
 	{
@@ -185,7 +186,7 @@ private:
 		uint64_t w = uint64_t(v);
 		return w;
 	}
-	
+
 	template<class T> uint64_t toInt15(T v)
 	{
 		// check for overflow
