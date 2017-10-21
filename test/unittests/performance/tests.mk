@@ -1,7 +1,7 @@
 #
 # this makefile can be use to build and run the entire suite 
 #
-#     make -f tests.mk SOLC=solc ETHVM=ethvm EVM=evm PARITY=parity-evm all
+#     make -f tests.mk SOLC=solc ETHVM=ethvm ETHVM-JIT=ethvm EVM=evm PARITY=parity-evm all
 #
 # or build and run only a single test on a single VM
 #
@@ -20,23 +20,26 @@
 # define a path to these programs on make command line to pick one or more of them to run
 # the default is to do nothing
 #
-ifdef SOLC
-	SOLC_SOL_= $(SOLC) -o . --overwrite --asm --bin $*.sol 
-	SOLC_ASM_= $(SOLC) --assemble $*.asm | grep '^[0-9a-f]\+$\' > $*.bin
-endif
-ifdef ETHVM
-	ETHVM_ = $(call STATS,ethvm) $(ETHVM) $*.bin test; touch $*.ran
-endif
 ifdef EVM
 	EVM_ = $(call STATS,evm) $(EVM) --codefile $*.bin run; touch $*.ran
 endif
 ifdef PARITY
 	PARITY_ = $(call STATS,parity) $(PARITY) stats --gas 10000000000 --code `cat $*.bin`; touch $*.ran
 endif
+ifdef SOLC
+	SOLC_SOL_= $(SOLC) -o . --overwrite --asm --bin $*.sol 
+	SOLC_ASM_= $(SOLC) --assemble $*.asm | grep '^[0-9a-f]\+$\' > $*.bin
+endif
+ifdef ETHVM
+	ETHVM_ = $(call STATS,ethvm) $(ETHVM) test $*.bin; touch $*.ran
+endif
+ifdef ETHVM-JIT
+	ETHVM_JIT_ = $(call STATS,ethvm-jit) $(ETHVM-JIT) --vm jit test $*.bin; touch $*.ran
+endif
 
 # Macs ignore or reject --format parameter
 #STATS = time --format "stats: $(1) $* %U %M"
-STATS = time -p
+STATS = echo $(1); time -p
 
 #
 # to support new clients
@@ -46,9 +49,10 @@ STATS = time -p
 #
 # .ran files are just empty targets that indicate a program ran
 %.ran : %.bin
-	$(call ETHVM_)
 	$(call EVM_)
 	$(call PARITY_)
+	$(call ETHVM_)
+	$(call ETHVM_JIT_)
 
 %.ran : %.c
 	gcc -O0 -S $*.c
