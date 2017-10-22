@@ -77,6 +77,7 @@ contract mix {
 		   0xffffffffffffffff
 		];
 
+		// loop over inner mixing block of BLAKE2B compression function with arbitrary input
 		for (uint i=0; i < 10923; ++i) {
 
 			G( v, 0, 4, 8, 12, m[0], m[1]);

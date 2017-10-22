@@ -36,6 +36,12 @@ endif
 ifdef ETHVM-JIT
 	ETHVM_JIT_ = $(call STATS,ethvm-jit) $(ETHVM-JIT) --vm jit test $*.bin; touch $*.ran
 endif
+ifdef WAST
+	WAST_ = $(call STATS,evm-wast) $(WAST) ./$*.wast; touch $*.ran
+endif
+ifdef WAVM
+	WASM_ = $(call STATS,C-wasm) $(WASM) ./$*.wasm; touch $*.ran
+endif
 
 # Macs ignore or reject --format parameter
 #STATS = time --format "stats: $(1) $* %U %M"
@@ -55,10 +61,16 @@ STATS = echo $(1); time -p
 	$(call ETHVM_JIT_)
 
 %.ran : %.c
-	gcc -O0 -S $*.c
+	gcc -O3 -S $*.c
 	gcc -o $* $*.s
 	$(call STATS,C) ./$*
 	touch $*.ran
+
+%.ran : %.wast
+	$(call WAST_)
+
+%.ran : %.wasm
+	$(call WASM_)
 
 # hold on to intermediate binaries until source changes
 .PRECIOUS : %.bin
@@ -69,7 +81,8 @@ STATS = echo $(1); time -p
 %.bin : %.sol
 	$(call SOLC_SOL_)
 
-all : ops programs
+
+all : ops programs wast C wasm
 
 # EVM assembly programs for timing individual operators
 #
@@ -96,12 +109,6 @@ ops : \
 	div256.ran \
 	exp.ran
 
-# C versions for comparison
-C : \
-	popincc.ran \
-	poplnkc.ran \
-	mul64c.ran
-
 # Solidity programs for more realistic timing
 programs : \
 	loop.ran \
@@ -109,6 +116,30 @@ programs : \
 	rc5.ran \
 	mix.ran \
 	rng.ran
+
+	
+# EVM -> wast versions for comparison
+wast : \
+	rc5ew.ran \
+	mixew.ran \
+	rngew.ran
+
+# C versions for comparison
+C : \
+	popincc.ran \
+	poplnkc.ran \
+	mul64c.ran \
+	func.ran \
+	rc5c.ran \
+	mixc.ran \
+	rngc.ran
+
+# C -> wasm versions for comparison
+wasm : \
+	funcw.ran \
+	rc5cw.ran \
+	mixcw.ran \
+	rngcw.ran
 
 clean :
 	rm *.ran *.bin *.evm *.s mul64c poplnkc popincc
