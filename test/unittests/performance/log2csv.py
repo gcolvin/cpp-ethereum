@@ -2,17 +2,17 @@ import sys
 import re
 
 # regex for the lines with relevant data
-test_line = 'echo (.+); time -p .+; touch (.+).ran$'
+test_line = 'echo (.+); time -p .+; touch (.+)\.w*ran$'
 gas_line = 'as used: ([0-9]+)'
 secs_line = 'user ([0-9.]+)'
+msecs_line = 'mark: ([0-9.]+)ms'
 
 # read in data
 path = ''
 client = ''
 test = ''
-clients = []
+clients = ['gas']
 tests = []
-gas = {}
 data = {}
 for line in sys.stdin:
 	match = re.search(test_line, line)
@@ -26,7 +26,9 @@ for line in sys.stdin:
 		continue
 	match = re.search(gas_line, line)
 	if match:
-		gas[test] = match.group(1)
+		if test not in data:
+			data[test] = {}
+		data[test]['gas'] = match.group(1)
 		continue
 	match = re.search(secs_line, line)
 	if match:
@@ -34,11 +36,15 @@ for line in sys.stdin:
 			data[test] = {}
 		data[test][client] = match.group(1)
 		continue
+	match = re.search(msecs_line, line)
+	if match:
+		if test not in data:
+			data[test] = {}
+		data[test][client] = match.group(1)*1000;
+		continue
 
 # print the header
 sys.stdout.write("(sec/run)")
-if len(gas):
-	sys.stdout.write(", gas")
 for client in clients:
 	sys.stdout.write(", %s" % client)
 sys.stdout.write("\n")
@@ -46,8 +52,6 @@ sys.stdout.write("\n")
 # print the test, gas, secs, secs, ...
 for test in tests:
 	sys.stdout.write("%s" % test)
-	if gas[test]:
-		sys.stdout.write(", %s" % gas[test])
 	for client in clients:
-		sys.stdout.write(", %s" % data[test][client])
+		sys.stdout.write(", %s" % data[test].get(client,0))
 	sys.stdout.write("\n")

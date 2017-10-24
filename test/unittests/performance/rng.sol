@@ -1,9 +1,9 @@
 pragma solidity ^0.4.0;
 
-contract bbs256 {
+contract rng {
 
 	// 2**20 tests
-	function bbs256() {
+	function rng() {
 	
 		// magic seeds
 		uint256 shub = 0x627c8a0a11b125504c703040dd1821c53293b76dfd8bb9fca1159b123179435;

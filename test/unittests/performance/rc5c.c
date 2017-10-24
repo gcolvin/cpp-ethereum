@@ -91,11 +91,12 @@ static uint32_t message[4] = { 0xfeedface, 0xdeadbeef, 0xfeedbabe, 0xcafebeef };
 
 int main(int argc, char** argv) {
 
-	key[0] += argc;
+	key[argc] += argc;
 	expand(key, box);
 
-	for (int i = 0; i < 43690; ++i)
-		if (!test(box, message))
-		  return 1;
-	return 0;
+	for (int i = 0; i < 43690*1000; ++i)
+		test(box, message);
+//		if (!test(box, message))
+//		  return 1;
+//	return 0;
 }

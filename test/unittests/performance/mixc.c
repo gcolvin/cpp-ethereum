@@ -1,47 +1,49 @@
-static volatile unsigned long v[16] = {
-   0xffffffffffffffff,
-   0xffffffffffff,
-   0xffffffff,
-   0xffff,
-   0xffffffffffffffff,
-   0xffffffffffff,
-   0xffffffff,
-   0xffff,
-   0xffffffffffffffff,
-   0xffffffffffff,
-   0xffffffff,
-   0xffff,
-   0xffffffffffffffff,
-   0xffffffffffff,
-   0xffffffff,
-   0xffff
+#include <stdint.h>
+
+static volatile uint64_t v[16] = {
+	0xb8dab0e6dad09901,
+	0xcf03c5c600757ab7,
+	0xdfacb1f9d9c57a93,
+	0xfee2361fbf786127,
+	0x99d13298ec49cd87,
+	0x918b11fad70c90af,
+	0xf8c12d8a31e521ef,
+	0x8c308be5ba069c03,
+	0x9f2afdcc19f4d225,
+	0x8524cd5a09dd64e1,
+	0xe77681347ec6afb3,
+	0xe89a921bb73bcd33,
+	0xea79de676052bfad,
+	0x98d60534a88e1455,
+	0xe2ddb16b4735f3b5,
+	0x8fad663889763fe5
 };
 
-static unsigned long m[16] = {
-   0xffff,
-   0xffffffff,
-   0xffffffffffff,
-   0xffffffffffffffff,
-   0xffff,
-   0xffffffff,
-   0xffffffffffff,
-   0xffffffffffffffff,
-   0xffff,
-   0xffffffff,
-   0xffffffffffff,
-   0xffffffffffffffff,
-   0xffff,
-   0xffffffff,
-   0xffffffffffff,
-   0xffffffffffffffff
+static uint64_t m[16] = {
+	0xfa178d7aea611c31,
+	0x906be21bf1df56d5,
+	0xcb84ea155d209ae9,
+	0xf33f2e35821fa05f,
+	0xbc8873b0c6a9216f,
+	0xf50bfb78e5aac2ab,
+	0xf59059b1a358e425,
+	0xbbf436c25f04b11b,
+	0xcd8a68ce90485ff9,
+	0xe37fc528939a9e07,
+	0x9c34eabceaf3be8d,
+	0x9c61750f270e0107,
+	0xa5ce2259f17dd9e5,
+	0xd8b677d238d03555,
+	0xd611b10485d34eef,
+	0x807ce600be072f3d
 };
 
-static unsigned long ror(unsigned long v, int n) {
+static uint64_t ror(uint64_t v, int n) {
 	return v >> n | v << (32 - n);
 }
 
 // Mixing Function G from BLAKE2B
-static void G(int a, int b, int c, int d, unsigned long x, unsigned long y) {
+static void G(int a, int b, int c, int d, uint64_t x, uint64_t y) {
 
 	v[a] += v[b] + x;
 	ror(v[d] ^= v[a], 32);
@@ -58,7 +60,7 @@ static int mix(int i) {
 	v[0] += i;
 
 	// loop over inner mixing block of BLAKE2B compression function with arbitrary input
-	for (int i=0; i < 10923; ++i) {
+	for (int i=0; i < 8192*1000; ++i) {
 
 		G(0, 4, 8, 12, m[0], m[1]);
 		G(1, 5, 9, 13, m[2], m[3]);

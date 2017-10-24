@@ -1,32 +1,41 @@
 pragma solidity ^0.4.0;
 
-contract base {
+contract fun {
 
-	function nada(uint u) internal returns (uint) {
-		return u;
+	uint[2] bottom;
+
+	function f1A(uint top) {
+		bottom[0] = top;
 	}
-}
-
-contract derived is base {
-	function nada(uint u) internal returns (uint) {
-		return base.nada(base.nada(u));
+	function f1B(uint top) {
+		bottom[0] = top;
 	}
-}
-
-contract fun is derived {
-
-	function useless(uint u) returns (uint) {
-		return nada(nada(u));
+	function f1(uint top) {
+		f1A(top);
+		f1B(top);
 	}
-	
-	function test() {
-		uint u = 8;
-		for (int i = 0; i < 1048576; ++i)
-			u = useless(useless(u));
-		assert(u == 8);
+
+	function f2A(uint top) {
+		bottom[1] = top;
+	}
+	function f2B(uint top) {
+		bottom[1] = top;
+	}
+	function f2(uint top) {
+		f2A(top);
+		f2B(top);
+	}
+
+	function f(uint top1, uint top2) {
+		f1(top1);
+		f2(top2);
 	}
 
 	function fun() {
-		test();
+		for (uint i = 0; i < 65536; ++i) {
+			uint x = i;
+			uint y = i;
+			f(x, y);
+		}
 	}
 }
