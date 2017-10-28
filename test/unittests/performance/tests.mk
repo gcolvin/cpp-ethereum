@@ -27,18 +27,20 @@ ifdef PARITY
 	PARITY_ = $(call STATS,parity) $(PARITY) stats --gas 10000000000 --code `cat $*.bin`; touch $*.ran
 endif
 ifdef SOLC
-	SOLC_SOL_= $(SOLC) -o . --overwrite --asm --bin $*.sol 
+	SOLC_SOL_= $(SOLC) -o . --overwrite --optimize --asm --bin $*.sol 
 	SOLC_ASM_= $(SOLC) --assemble $*.asm | grep '^[0-9a-f]\+$\' > $*.bin
 endif
 ifdef ETHVM
 	ETHVM_ = $(call STATS,ethvm) $(ETHVM) test $*.bin; touch $*.ran
 endif
 ifdef ETHVM-JIT
-	ETHVM_JIT_ = $(call STATS,ethvm-jit) $(ETHVM-JIT) --vm jit test $*.bin; touch $*.ran
+	ETHVM_JIT_ = $(call STATS,ethvm-jit) $(ETHVM-JIT) --vm jit --timestamp 13 test $*.bin; touch $*.ran
 endif
 ifdef WASM
-	WAST_ = $(call STATS,C-wasm) $(WASM) ./$*.wast; touch $*.wran
-	WASM_ = $(call STATS,evm-wasm) $(WASM) ./$*.bin; touch $*.wran
+	WASM_ = $(call STATS,C-wasm) $(WASM) ./$*.wasm; touch $*.wran
+endif
+ifdef WEVM
+	WEVM_ = $(call STATS,evm-wasm) $(WEVM) ./$*.bin; touch $*.wran
 endif
 
 # Macs ignore or reject --format parameter
@@ -59,15 +61,20 @@ STATS = echo $(1); time -p
 	$(call ETHVM_JIT_)
 
 %.cran : %.c
-	gcc -O3 -S $*.c
+	gcc -O3 -S -I . $*.c
 	gcc -o $* $*.s
-	$(call STATS,C) ./$*; touch $*.ran
+	$(call STATS,C) ./$*; touch $*.cran
 	
-%.wran : %.wast
-	$(call WAST_)
+%.cran : %.cpp
+	g++ -O3 -S -std=c++11 -I . $*.cpp
+	g++ -o $* $*.s
+	$(call STATS,C) ./$*; touch $*.cran
+	
+%.wran : %.wasm
+	$(call WASM_)
 
 %.wran : %.bin
-	$(call WASM_)
+	$(call WEVM_)
 
 # hold on to intermediate binaries until source changes
 .PRECIOUS : %.bin %.wast %.wasm
@@ -78,9 +85,11 @@ STATS = echo $(1); time -p
 %.bin : %.sol
 	$(call SOLC_SOL_)
 
-%.wast : %.c
+%.wasm : %.c
 	emcc -s WASM=1 -O3 $*.c -o $*.html
-	wasm2wat $*.wasm > $*.wast	
+
+%.wasm : %.cpp
+	emcc -s WASM=1 -O3 -std=c++11 $*.cpp -o $*.html
 
 
 all : ops programs C W
@@ -98,7 +107,12 @@ ops : \
 	sub256.ran \
 	mul256.ran \
 	div256.ran \
-	exp.ran
+	exp.ran \
+	add256c.cran \
+	sub256c.cran \
+	mul256c.cran \
+	div256c.cran \
+	expc.cran
 #	nop.ran \
 #	pop.ran \
 #	add64.ran \
@@ -119,7 +133,7 @@ ops : \
 programs : \
 	loop.ran \
 	fun.ran \
-	mix.ran \
+	pmul.ran \
 	rng.ran \
 	rc5.ran
 
@@ -129,9 +143,10 @@ C : \
 	poplnkc.cran \
 	mul64c.cran \
 	func.cran \
+	rc5c.cran \
 	mixc.cran \
 	rngc.cran \
-	rc5c.cran
+	pmulc.cran
 
 # wasm versions for comparison
 W : \
@@ -140,17 +155,24 @@ W : \
 	mul256.wran \
 	div256.wran \
 	exp.wran \
+	add256c.wran \
+	sub256c.wran \
+	mul256c.wran \
+	div256c.wran \
+	expc.wran \
 	fun.wran \
+	rc5.wran \
 	mix.wran \
 	rng.wran \
-	rc5.wran \
+	pmul.wran \
 	func.wran \
+	rc5c.wran \
 	mixc.wran \
 	rngc.wran \
-	rc5c.wran
+	pmulc.wran
 
 clean :
-	rm *.ran *.cran *.wran *.wast *.wasm *.bin *.evm *.s mul64c poplnkc popincc
+	rm *.ran *.cran *.wran *.wast* *.wasm *.bin *.evm *.s mul64c poplnkc popincc
 	
 rerun :
 	rm *.ran

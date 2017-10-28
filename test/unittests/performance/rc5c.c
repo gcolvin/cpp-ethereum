@@ -94,9 +94,9 @@ int main(int argc, char** argv) {
 	key[argc] += argc;
 	expand(key, box);
 
-	for (int i = 0; i < 43690*1000; ++i)
+	for (unsigned long i = 0; i < 50000; ++i)
 		test(box, message);
-//		if (!test(box, message))
-//		  return 1;
-//	return 0;
+		if (!test(box, message))
+		  return 1;
+	return 0;
 }

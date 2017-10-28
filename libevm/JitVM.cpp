@@ -114,15 +114,24 @@ EVM& getJit()
 
 owning_bytes_ref JitVM::exec(u256& io_gas, ExtVMFace& _ext, OnOpFunc const& _onOp)
 {
-	bool rejected = false;
-	// TODO: Rejecting transactions with gas limit > 2^63 can be used by attacker to take JIT out of scope
-	rejected |= io_gas > std::numeric_limits<int64_t>::max(); // Do not accept requests with gas > 2^63 (int64 max)
-	rejected |= _ext.envInfo().number() > std::numeric_limits<int64_t>::max();
-	rejected |= _ext.envInfo().timestamp() > std::numeric_limits<int64_t>::max();
-	rejected |= _ext.envInfo().gasLimit() > std::numeric_limits<int64_t>::max();
-	if (rejected)
+	if (io_gas > std::numeric_limits<int64_t>::max()) // Do not accept requests with gas > 2^63 (int64 max)
 	{
-		cwarn << "Execution rejected by EVM JIT (gas limit: " << io_gas << "), executing with interpreter";
+		cwarn << "Execution rejected by EVM JIT io_gas=" << io_gas << "), executing with interpreter";
+		return VMFactory::create(VMKind::Interpreter)->exec(io_gas, _ext, _onOp);
+	}
+	if ( _ext.envInfo().number() > std::numeric_limits<int64_t>::max())
+	{
+		cwarn << "Execution rejected by EVM JIT number=" << _ext.envInfo().number() << "), executing with interpreter";
+		return VMFactory::create(VMKind::Interpreter)->exec(io_gas, _ext, _onOp);
+	}
+	if ( _ext.envInfo().timestamp() > std::numeric_limits<int64_t>::max())
+	{
+		cwarn << "Execution rejected by EVM JIT timestamp=" << _ext.envInfo().timestamp() << "), executing with interpreter";
+		return VMFactory::create(VMKind::Interpreter)->exec(io_gas, _ext, _onOp);
+	}
+	if ( _ext.envInfo().gasLimit() > std::numeric_limits<int64_t>::max())
+	{
+		cwarn << "Execution rejected by EVM JIT gasLimit=" << _ext.envInfo().gasLimit() << "), executing with interpreter";
 		return VMFactory::create(VMKind::Interpreter)->exec(io_gas, _ext, _onOp);
 	}
 

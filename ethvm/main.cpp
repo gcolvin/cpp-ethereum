@@ -292,14 +292,14 @@ int main(int argc, char** argv)
 	executive.setResultRecipient(res);
 	t.forceSender(sender);
 
-	unordered_map<byte, pair<unsigned, bigint>> counts;
+	unordered_map<byte, pair<unsigned, uint64_t>> counts;
 	unsigned total = 0;
 	bigint memTotal;
 	auto onOp = [&](uint64_t step, uint64_t PC, Instruction inst, bigint m, bigint gasCost, bigint gas, VM* vm, ExtVMFace const* extVM) {
 		if (mode == Mode::Statistics)
 		{
 			counts[(byte)inst].first++;
-			counts[(byte)inst].second += gasCost;
+			counts[(byte)inst].second += uint64_t(gasCost);
 			total++;
 			if (m > 0)
 				memTotal = m;
@@ -339,10 +339,28 @@ int main(int argc, char** argv)
 
 		cout << total << " operations in " << execTime << " seconds.\n";
 		cout << "Maximum memory usage: " << memTotal * 32 << " bytes\n";
-		cout << "Expensive operations:\n";
-		for (auto const& c: {Instruction::SSTORE, Instruction::SLOAD, Instruction::CALL, Instruction::CREATE, Instruction::CALLCODE, Instruction::DELEGATECALL, Instruction::MSTORE8, Instruction::MSTORE, Instruction::MLOAD, Instruction::SHA3})
-			if (!!counts[(byte)c].first)
-				cout << "  " << instructionInfo(c).name << " x " << counts[(byte)c].first << " (" << counts[(byte)c].second << " gas)\n";
+//		cout << "Expensive operations:\n";
+//		for (auto const& c: {Instruction::SSTORE, Instruction::SLOAD, Instruction::CALL, Instruction::CREATE, Instruction::CALLCODE, Instruction::DELEGATECALL, Instruction::MSTORE8, Instruction::MSTORE, Instruction::MLOAD, Instruction::SHA3})
+//		cout << "Expensive operations:\n";
+		struct Counts { Instruction code; uint64_t count; uint64_t gas; };
+		vector<Counts> sorted_counts;
+		uint64_t total_counts = 0;
+		uint64_t total_gas = 0;
+
+		for (int i = 0; i < 256; ++i)
+			if (counts[i].first > 0) {
+				Counts count{Instruction(i), counts[i].first, counts[i].second};
+				sorted_counts.push_back(count);
+				total_counts += count.count;
+				total_gas += count.gas;
+			}
+
+		auto compare_counts = [](Counts l, Counts r) { return l.gas < r.gas && l.count < r.count; };
+		sort(sorted_counts.begin(), sorted_counts.end(), compare_counts);
+
+		for (auto count: sorted_counts)
+			cout << "  " << instructionInfo(count.code).name << " x " << count.count << " (" << count.gas << " gas)\n";
+		cout << "  " << "ALL" << " x " << total_counts << " (" << total_gas << " gas)\n";
 	}
 	else if (mode == Mode::Trace)
 		cout << st.json(styledJson);
